@@ -40,12 +40,12 @@ fu! s:limelight() abort
     endif
 
     let curr = [line('.'), line('$')]
-    if curr ==# w:limelight_prev[0 : 1]
+    if curr == w:limelight_prev[0 : 1]
         return
     endif
 
     let paragraph = s:getpos()
-    if paragraph ==# w:limelight_prev[2 : 3]
+    if paragraph == w:limelight_prev[2 : 3]
         return
     endif
 
