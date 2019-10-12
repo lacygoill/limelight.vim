@@ -1,7 +1,7 @@
 let s:default_coeff = str2float('0.5')
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
 
-fu! s:unsupported() abort
+fu s:unsupported() abort
     let var = 'g:limelight_conceal_'.(has('gui_running') ? 'gui' : 'cterm').'fg'
 
     if exists(var)
@@ -11,7 +11,7 @@ fu! s:unsupported() abort
     endif
 endfu
 
-fu! s:getpos() abort
+fu s:getpos() abort
     let bop = get(g:, 'limelight_bop', '^\s*$\n\zs')
     let eop = get(g:, 'limelight_eop', '^\s*$')
     let span = max([0, get(g:, 'limelight_paragraph_span', 0) - s:empty(getline('.'))])
@@ -27,11 +27,11 @@ fu! s:getpos() abort
     return [start, end]
 endfu
 
-fu! s:empty(line) abort
+fu s:empty(line) abort
     return (a:line =~# '^\s*$')
 endfu
 
-fu! s:limelight() abort
+fu s:limelight() abort
     if !empty(get(w:, 'limelight_range', []))
         return
     endif
@@ -54,7 +54,7 @@ fu! s:limelight() abort
     let w:limelight_prev = extend(curr, paragraph)
 endfu
 
-fu! s:hl(startline, endline) abort
+fu s:hl(startline, endline) abort
     let w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
     let priority = get(g:, 'limelight_priority', 10)
     call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<'.a:startline.'l', priority))
@@ -63,13 +63,13 @@ fu! s:hl(startline, endline) abort
     endif
 endfu
 
-fu! s:clear_hl() abort
+fu s:clear_hl() abort
     while exists('w:limelight_match_ids') && !empty(w:limelight_match_ids)
         sil! call matchdelete(remove(w:limelight_match_ids, -1))
     endwhile
 endfu
 
-fu! s:hex2rgb(str) abort
+fu s:hex2rgb(str) abort
     let str = substitute(a:str, '^#', '', '')
     return [eval('0x'.str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
 endfu
@@ -82,7 +82,7 @@ let s:gray_converter = {
             \ 231: 256
             \ }
 
-fu! s:gray_contiguous(col) abort
+fu s:gray_contiguous(col) abort
     let val = get(s:gray_converter, a:col, a:col)
     if val < 231 || val > 256
         throw s:unsupported()
@@ -90,11 +90,11 @@ fu! s:gray_contiguous(col) abort
     return val
 endfu
 
-fu! s:gray_ansi(col) abort
+fu s:gray_ansi(col) abort
     return a:col == 231 ? 0 : (a:col == 256 ? 231 : a:col)
 endfu
 
-fu! s:coeff(coeff) abort
+fu s:coeff(coeff) abort
     let coeff = a:coeff < 0 ?
                 \ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
     if coeff < 0 || coeff > 1
@@ -103,7 +103,7 @@ fu! s:coeff(coeff) abort
     return coeff
 endfu
 
-fu! s:dim(coeff) abort
+fu s:dim(coeff) abort
     let synid = synIDtrans(hlID('Normal'))
     let fg = synIDattr(synid, 'fg#')
     let bg = synIDattr(synid, 'bg#')
@@ -145,13 +145,13 @@ fu! s:dim(coeff) abort
     endif
 endfu
 
-fu! s:error(msg) abort
+fu s:error(msg) abort
     echohl ErrorMsg
     echo a:msg
     echohl None
 endfu
 
-fu! s:parse_coeff(coeff) abort
+fu s:parse_coeff(coeff) abort
     let t = type(a:coeff)
     if t == 1
         if a:coeff =~ '^ *[0-9.]\+ *$'
@@ -167,7 +167,7 @@ fu! s:parse_coeff(coeff) abort
     return c
 endfu
 
-fu! s:on(range, ...) abort
+fu s:on(range, ...) abort
     try
         let s:limelight_coeff = a:0 > 0 ? s:parse_coeff(a:1) : -1
         call s:dim(s:limelight_coeff)
@@ -206,7 +206,7 @@ fu! s:on(range, ...) abort
     endif
 endfu
 
-fu! s:off() abort
+fu s:off() abort
     call s:clear_hl()
     augroup limelight
         au!
@@ -215,17 +215,17 @@ fu! s:off() abort
     unlet! w:limelight_prev w:limelight_match_ids w:limelight_range
 endfu
 
-fu! s:is_on() abort
+fu s:is_on() abort
     return exists('#limelight')
 endfu
 
-fu! s:cleanup() abort
+fu s:cleanup() abort
     if !s:is_on()
         call s:clear_hl()
     end
 endfu
 
-fu! limelight#execute(bang, visual, line1, line2, ...) abort
+fu limelight#execute(bang, visual, line1, line2, ...) abort
     let range = a:visual ? [a:line1, a:line2] : []
     if a:bang
         if a:0 > 0 && a:1 =~ '^!' && !s:is_on()
@@ -244,6 +244,6 @@ fu! limelight#execute(bang, visual, line1, line2, ...) abort
     endif
 endfu
 
-fu! limelight#operator(...) abort
+fu limelight#operator(...) abort
     call limelight#execute(0, 1, line("'["), line("']"))
 endfu
