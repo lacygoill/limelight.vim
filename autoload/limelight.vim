@@ -202,7 +202,7 @@ fu s:on(range, ...) abort
     augroup END
 
     if exists('#CursorMoved')
-        doautocmd CursorMoved
+        do <nomodeline> CursorMoved
     endif
 endfu
 
