@@ -135,7 +135,7 @@ fu s:dim(coeff) abort
             let bg = s:gray_contiguous(bg)
             let dim = s:gray_ansi(float2nr(bg * coeff + fg * (1 - coeff)))
         endif
-        if type(dim) == 1
+        if type(dim) == v:t_string
             exe printf('hi LimelightDim ctermfg=%s', dim)
         else
             exe printf('hi LimelightDim ctermfg=%d', dim)
