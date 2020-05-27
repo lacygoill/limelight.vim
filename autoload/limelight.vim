@@ -244,5 +244,9 @@ fu limelight#execute(bang, visual, line1, line2, ...) abort
 endfu
 
 fu limelight#operator(...) abort
+    if !a:0
+        let &opfunc = 'limelight#operator'
+        return 'g@'
+    endif
     call limelight#execute(0, 1, line("'["), line("']"))
 endfu
