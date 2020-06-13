@@ -108,7 +108,7 @@ fu s:dim(coeff) abort
     let fg = synIDattr(synid, 'fg#')
     let bg = synIDattr(synid, 'bg#')
 
-    if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
+    if has('gui_running') || has('termguicolors') && &termguicolors
         if a:coeff < 0 && exists('g:limelight_conceal_guifg')
             let dim = g:limelight_conceal_guifg
         elseif empty(fg) || empty(bg)
