@@ -1,20 +1,20 @@
 let s:default_coeff = str2float('0.5')
-let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
+let s:invalid_coefficient = 'Invalid coefficient.  Expected: 0.0 ~ 1.0'
 
 fu s:unsupported() abort
-    let var = 'g:limelight_conceal_'.(has('gui_running') ? 'gui' : 'cterm').'fg'
+    let var = 'g:limelight_conceal_' .. (has('gui_running') ? 'gui' : 'cterm') .. 'fg'
 
     if exists(var)
         return 'Cannot calculate background color.'
     else
-        return 'Unsupported color scheme. '.var.' required.'
+        return 'Unsupported color scheme. ' .. var .. ' required.'
     endif
 endfu
 
 fu s:getpos() abort
     let bop = get(g:, 'limelight_bop', '^\s*$\n\zs')
     let eop = get(g:, 'limelight_eop', '^\s*$')
-    let span = max([0, get(g:, 'limelight_paragraph_span', 0) - s:empty(getline('.'))])
+    let span = max([0, get(g:, 'limelight_paragraph_span', 0) - getline('.')->s:empty()])
     let pos = getcurpos()
     for i in range(0, span)
         let start = searchpos(bop, i == 0 ? 'cbW' : 'bW')[0]
@@ -32,7 +32,7 @@ fu s:empty(line) abort
 endfu
 
 fu s:limelight() abort
-    if !empty(get(w:, 'limelight_range', []))
+    if !get(w:, 'limelight_range', [])->empty()
         return
     endif
     if !exists('w:limelight_prev')
@@ -57,30 +57,30 @@ endfu
 fu s:hl(startline, endline) abort
     let w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
     let priority = get(g:, 'limelight_priority', 10)
-    call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<'.a:startline.'l', priority))
+    call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<' .. a:startline .. 'l', priority))
     if a:endline > 0
-        call add(w:limelight_match_ids, matchadd('LimelightDim', '\%>'.a:endline.'l', priority))
+        call add(w:limelight_match_ids, matchadd('LimelightDim', '\%>' .. a:endline .. 'l', priority))
     endif
 endfu
 
 fu s:clear_hl() abort
     while exists('w:limelight_match_ids') && !empty(w:limelight_match_ids)
-        sil! call matchdelete(remove(w:limelight_match_ids, -1))
+        sil! call remove(w:limelight_match_ids, -1)->matchdelete()
     endwhile
 endfu
 
 fu s:hex2rgb(str) abort
     let str = trim(a:str, '#')
-    return [eval('0x'.str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
+    return [eval('0x' .. str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
 endfu
 
 let s:gray_converter = {
-            \ 0:   231,
-            \ 7:   254,
-            \ 15:  256,
-            \ 16:  231,
-            \ 231: 256
-            \ }
+    \ 0: 231,
+    \ 7: 254,
+    \ 15: 256,
+    \ 16: 231,
+    \ 231: 256,
+    \ }
 
 fu s:gray_contiguous(col) abort
     let val = get(s:gray_converter, a:col, a:col)
@@ -96,15 +96,15 @@ endfu
 
 fu s:coeff(coeff) abort
     let coeff = a:coeff < 0 ?
-                \ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
+        \ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
     if coeff < 0 || coeff > 1
-        throw 'Invalid g:limelight_default_coefficient. Expected: 0.0 ~ 1.0'
+        throw 'Invalid g:limelight_default_coefficient.  Expected: 0.0 ~ 1.0'
     endif
     return coeff
 endfu
 
 fu s:dim(coeff) abort
-    let synid = synIDtrans(hlID('Normal'))
+    let synid = hlID('Normal')->synIDtrans()
     let fg = synIDattr(synid, 'fg#')
     let bg = synIDattr(synid, 'bg#')
 
@@ -118,10 +118,11 @@ fu s:dim(coeff) abort
             let fg_rgb = s:hex2rgb(fg)
             let bg_rgb = s:hex2rgb(bg)
             let dim_rgb = [
-                        \ bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
-                        \ bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
-                        \ bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff)]
-            let dim = '#'.join(map(dim_rgb, 'printf("%x", float2nr(v:val))'), '')
+                \ bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
+                \ bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
+                \ bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff),
+                \ ]
+            let dim = '#' .. map(dim_rgb, 'float2nr(v:val)->printf("%x")')->join('')
         endif
         exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
     elseif &t_Co == 256
@@ -133,7 +134,7 @@ fu s:dim(coeff) abort
             let coeff = s:coeff(a:coeff)
             let fg = s:gray_contiguous(fg)
             let bg = s:gray_contiguous(bg)
-            let dim = s:gray_ansi(float2nr(bg * coeff + fg * (1 - coeff)))
+            let dim = float2nr(bg * coeff + fg * (1 - coeff))->s:gray_ansi()
         endif
         if type(dim) == v:t_string
             exe printf('hi LimelightDim ctermfg=%s', dim)
@@ -141,7 +142,7 @@ fu s:dim(coeff) abort
             exe printf('hi LimelightDim ctermfg=%d', dim)
         endif
     else
-        throw 'Unsupported terminal. Sorry.'
+        throw 'Unsupported terminal.  Sorry.'
     endif
 endfu
 
@@ -188,11 +189,11 @@ fu s:on(range, ...) abort
             au CursorMoved,CursorMovedI * call s:limelight()
         endif
         au ColorScheme * try
-                    \|   call s:dim(s:limelight_coeff)
-                    \| catch
-                        \|   call s:off()
-                        \|   throw v:exception
-                        \| endtry
+            \ |     call s:dim(s:limelight_coeff)
+            \ | catch
+            \ |     call s:off()
+            \ |     throw v:exception
+            \ | endtry
     augroup END
 
     " FIXME: We cannot safely remove this group once Limelight started
