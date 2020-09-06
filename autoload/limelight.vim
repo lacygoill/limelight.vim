@@ -56,10 +56,9 @@ endfu
 
 fu s:hl(startline, endline) abort
     let w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
-    let priority = get(g:, 'limelight_priority', 10)
-    call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<' .. a:startline .. 'l', priority))
+    call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<' .. a:startline .. 'l', 0))
     if a:endline > 0
-        call add(w:limelight_match_ids, matchadd('LimelightDim', '\%>' .. a:endline .. 'l', priority))
+        call add(w:limelight_match_ids, matchadd('LimelightDim', '\%>' .. a:endline .. 'l', 0))
     endif
 endfu
 
