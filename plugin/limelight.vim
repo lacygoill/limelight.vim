@@ -7,7 +7,7 @@ com -nargs=? -bar -bang -range Limelight call limelight#execute(<bang>0, <count>
 
 nno <expr><unique> ++ limelight#operator()
 nno <expr><unique> +++ limelight#operator() .. '_'
-xno <unique><silent> ++ :Limelight<cr>
+xno <unique> ++ <c-\><c-n><cmd>*Limelight<cr>
 
 " stop
-nno <unique><silent> +- :<c-u>Limelight!<cr>
+nno <unique> +- <cmd>Limelight!<cr>

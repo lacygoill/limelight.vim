@@ -1,7 +1,7 @@
 let s:default_coeff = str2float('0.5')
 let s:invalid_coefficient = 'Invalid coefficient.  Expected: 0.0 ~ 1.0'
 
-fu s:unsupported() abort
+fu s:Unsupported() abort
     let var = 'g:limelight_conceal_' .. (has('gui_running') ? 'gui' : 'cterm') .. 'fg'
 
     if exists(var)
@@ -68,7 +68,7 @@ fu s:clear_hl() abort
     endwhile
 endfu
 
-fu s:hex2rgb(str) abort
+fu s:Hex2rgb(str) abort
     let str = trim(a:str, '#')
     return [eval('0x' .. str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
 endfu
@@ -81,19 +81,19 @@ let s:gray_converter = {
     \ 231: 256,
     \ }
 
-fu s:gray_contiguous(col) abort
+fu s:Gray_contiguous(col) abort
     let val = get(s:gray_converter, a:col, a:col)
     if val < 231 || val > 256
-        throw s:unsupported()
+        throw s:Unsupported()
     endif
     return val
 endfu
 
-fu s:gray_ansi(col) abort
+fu s:Gray_ansi(col) abort
     return a:col == 231 ? 0 : (a:col == 256 ? 231 : a:col)
 endfu
 
-fu s:coeff(coeff) abort
+fu s:Coeff(coeff) abort
     let coeff = a:coeff < 0 ?
         \ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
     if coeff < 0 || coeff > 1
@@ -102,38 +102,39 @@ fu s:coeff(coeff) abort
     return coeff
 endfu
 
-fu s:dim(coeff) abort
-    let synid = hlID('Normal')->synIDtrans()
-    let fg = synIDattr(synid, 'fg#')
-    let bg = synIDattr(synid, 'bg#')
+def s:Dim(coeff: number)
+    var synid = hlID('Normal')->synIDtrans()
+    var fg = synIDattr(synid, 'fg#')
+    var bg = synIDattr(synid, 'bg#')
 
+    var dim: string
     if has('gui_running') || has('termguicolors') && &termguicolors
-        if a:coeff < 0 && exists('g:limelight_conceal_guifg')
-            let dim = g:limelight_conceal_guifg
+        if coeff < 0 && exists('g:limelight_conceal_guifg')
+            dim = g:limelight_conceal_guifg
         elseif empty(fg) || empty(bg)
-            throw s:unsupported()
+            throw Unsupported()
         else
-            let coeff = s:coeff(a:coeff)
-            let fg_rgb = s:hex2rgb(fg)
-            let bg_rgb = s:hex2rgb(bg)
-            let dim_rgb = [
-                \ bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
-                \ bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
-                \ bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff),
-                \ ]
-            let dim = '#' .. map(dim_rgb, 'float2nr(v:val)->printf("%x")')->join('')
+            var _coeff = Coeff(coeff)
+            var fg_rgb = Hex2rgb(fg)
+            var bg_rgb = Hex2rgb(bg)
+            var dim_rgb = [
+                bg_rgb[0] * _coeff + fg_rgb[0] * (1 - _coeff),
+                bg_rgb[1] * _coeff + fg_rgb[1] * (1 - _coeff),
+                bg_rgb[2] * _coeff + fg_rgb[2] * (1 - _coeff),
+                ]
+            dim = '#' .. map(dim_rgb, {_, v -> float2nr(v)->printf('%x')})->join('')
         endif
         exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
-    elseif &t_Co == 256
-        if a:coeff < 0 && exists('g:limelight_conceal_ctermfg')
-            let dim = g:limelight_conceal_ctermfg
-        elseif fg <= -1 || bg <= -1
-            throw s:unsupported()
+    elseif str2nr(&t_Co) == 256
+        if coeff < 0 && exists('g:limelight_conceal_ctermfg')
+            dim = g:limelight_conceal_ctermfg
+        elseif str2nr(fg) <= -1 || str2nr(bg) <= -1
+            throw Unsupported()
         else
-            let coeff = s:coeff(a:coeff)
-            let fg = s:gray_contiguous(fg)
-            let bg = s:gray_contiguous(bg)
-            let dim = float2nr(bg * coeff + fg * (1 - coeff))->s:gray_ansi()
+            var _coeff = Coeff(coeff)
+            fg = Gray_contiguous(fg)
+            bg = Gray_contiguous(bg)
+            dim = float2nr(str2nr(bg) * _coeff + str2nr(fg) * (1 - _coeff))->Gray_ansi()
         endif
         if type(dim) == v:t_string
             exe printf('hi LimelightDim ctermfg=%s', dim)
@@ -143,7 +144,7 @@ fu s:dim(coeff) abort
     else
         throw 'Unsupported terminal.  Sorry.'
     endif
-endfu
+enddef
 
 fu s:error(msg) abort
     echohl ErrorMsg
@@ -170,7 +171,7 @@ endfu
 fu s:on(range, ...) abort
     try
         let s:limelight_coeff = a:0 > 0 ? s:parse_coeff(a:1) : -1
-        call s:dim(s:limelight_coeff)
+        call s:Dim(s:limelight_coeff)
     catch
         return s:error(v:exception)
     endtry
@@ -188,7 +189,7 @@ fu s:on(range, ...) abort
             au CursorMoved,CursorMovedI * call s:limelight()
         endif
         au ColorScheme * try
-            \ |     call s:dim(s:limelight_coeff)
+            \ |     call s:Dim(s:limelight_coeff)
             \ | catch
             \ |     call s:off()
             \ |     throw v:exception
