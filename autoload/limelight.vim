@@ -70,7 +70,7 @@ endfu
 
 fu s:Hex2rgb(str) abort
     let str = trim(a:str, '#')
-    return [eval('0x' .. str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
+    return [eval('0x' .. str[0:1]), eval('0x' .. str[2:3]), eval('0x' .. str[4:5])]
 endfu
 
 let s:gray_converter = {
