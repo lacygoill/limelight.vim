@@ -197,7 +197,7 @@ fu s:on(range, ...) abort
     augroup END
 
     " FIXME: We cannot safely remove this group once Limelight started
-    augroup limelight_cleanup | au!
+    augroup LimelightCleanup | au!
         au WinEnter * call s:cleanup()
     augroup END
 
