@@ -208,8 +208,7 @@ endfu
 
 fu s:off() abort
     call s:clear_hl()
-    augroup limelight
-        au!
+    augroup limelight | au!
     augroup END
     augroup! limelight
     unlet! w:limelight_prev w:limelight_match_ids w:limelight_range
