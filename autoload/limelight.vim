@@ -70,7 +70,7 @@ endfu
 
 fu s:Hex2rgb(str) abort
     let str = trim(a:str, '#')
-    return [eval('0x' .. str[0:1]), eval('0x' .. str[2:3]), eval('0x' .. str[4:5])]
+    return [eval('0x' .. str[0 : 1]), eval('0x' .. str[2 : 3]), eval('0x' .. str[4 : 5])]
 endfu
 
 let s:gray_converter = {
@@ -122,7 +122,7 @@ def s:Dim(coeff: number)
                 bg_rgb[1] * _coeff + fg_rgb[1] * (1 - _coeff),
                 bg_rgb[2] * _coeff + fg_rgb[2] * (1 - _coeff),
                 ]
-            dim = '#' .. map(dim_rgb, {_, v -> float2nr(v)->printf('%x')})->join('')
+            dim = '#' .. map(dim_rgb, (_, v) => float2nr(v)->printf('%x'))->join('')
         endif
         exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
     elseif str2nr(&t_Co) == 256
@@ -229,7 +229,7 @@ fu limelight#execute(bang, visual, line1, line2, ...) abort
     if a:bang
         if a:0 > 0 && a:1 =~ '^!' && !s:is_on()
             if len(a:1) > 1
-                call s:on(range, a:1[1:-1])
+                call s:on(range, a:1[1 : -1])
             else
                 call s:on(range)
             endif
