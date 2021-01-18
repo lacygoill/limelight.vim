@@ -1,111 +1,131 @@
-let s:default_coeff = str2float('0.5')
-let s:invalid_coefficient = 'Invalid coefficient.  Expected: 0.0 ~ 1.0'
+vim9 noclear
 
-fu s:Unsupported() abort
-    let var = 'g:limelight_conceal_' .. (has('gui_running') ? 'gui' : 'cterm') .. 'fg'
+if exists('loaded') | finish | endif
+var loaded = true
 
-    if exists(var)
-        return 'Cannot calculate background color.'
+# Init {{{1
+
+const DEFAULT_COEFF: float = 0.5
+const INVALID_COEFFICIENT: string = 'Invalid coefficient.  Expected: 0.0 ~ 1.0'
+const GRAY_CONVERTER: dict<number> = {
+    0: 231,
+    7: 254,
+    15: 256,
+    16: 231,
+    231: 256,
+    }
+
+# Interface {{{1
+def limelight#execute( #{{{2
+    bang: bool,
+    visual: bool,
+    line1: number,
+    line2: number,
+    ...args: list<string>
+    )
+    var range: list<number> = visual ? [line1, line2] : []
+    if bang
+        if len(args) > 0 && args[0] =~ '^!' && !IsOn()
+            if len(args[0]) > 1
+                On(range, args[0][1 : -1])
+            else
+                On(range)
+            endif
+        else
+            Off()
+        endif
+    elseif len(args) > 0
+        On(range, args[0])
     else
-        return 'Unsupported color scheme. ' .. var .. ' required.'
+        On(range)
     endif
-endfu
+enddef
 
-fu s:getpos() abort
-    let bop = get(g:, 'limelight_bop', '^\s*$\n\zs')
-    let eop = get(g:, 'limelight_eop', '^\s*$')
-    let span = max([0, get(g:, 'limelight_paragraph_span', 0) - getline('.')->s:empty()])
-    let pos = getcurpos()
+def limelight#operator(type = ''): string #{{{2
+    if type == ''
+        &opfunc = 'limelight#operator'
+        return 'g@'
+    endif
+    limelight#execute(false, true, line("'["), line("']"))
+    return ''
+enddef
+#}}}1
+# Core {{{1
+def Getpos(): list<number> #{{{2
+    var bop: string = get(g:, 'limelight_bop', '^\s*$\n\zs')
+    var eop: string = get(g:, 'limelight_eop', '^\s*$')
+    var span: number = max([0,
+        get(g:, 'limelight_paragraph_span', 0)
+        -
+        (getline('.')->Empty() ? 1 : 0)
+        ])
+    var pos: list<number> = getcurpos()
+    var start: number
     for i in range(0, span)
-        let start = searchpos(bop, i == 0 ? 'cbW' : 'bW')[0]
+        start = searchpos(bop, i == 0 ? 'cbW' : 'bW')[0]
     endfor
-    call setpos('.', pos)
+    setpos('.', pos)
+    var end: number
     for _ in range(0, span)
-        let end = searchpos(eop, 'W')[0]
+        end = searchpos(eop, 'W')[0]
     endfor
-    call setpos('.', pos)
+    setpos('.', pos)
     return [start, end]
-endfu
+enddef
 
-fu s:empty(line) abort
-    return (a:line =~# '^\s*$')
-endfu
-
-fu s:limelight() abort
+def Limelight() #{{{2
     if !get(w:, 'limelight_range', [])->empty()
         return
     endif
     if !exists('w:limelight_prev')
-        let w:limelight_prev = [0, 0, 0, 0]
+        w:limelight_prev = [0, 0, 0, 0]
     endif
 
-    let curr = [line('.'), line('$')]
+    var curr: list<number> = [line('.'), line('$')]
     if curr == w:limelight_prev[0 : 1]
         return
     endif
 
-    let paragraph = s:getpos()
+    var paragraph: list<number> = Getpos()
     if paragraph == w:limelight_prev[2 : 3]
         return
     endif
 
-    call s:clear_hl()
-    call call('s:hl', paragraph)
-    let w:limelight_prev = extend(curr, paragraph)
-endfu
+    ClearHl()
+    call(Hl, paragraph)
+    w:limelight_prev = extend(curr, paragraph)
+enddef
 
-fu s:hl(startline, endline) abort
-    let w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
-    call add(w:limelight_match_ids, matchadd('LimelightDim', '\%<' .. a:startline .. 'l', 0))
-    if a:endline > 0
-        call add(w:limelight_match_ids, matchadd('LimelightDim', '\%>' .. a:endline .. 'l', 0))
+def Hl(startline: number, endline: number) #{{{2
+    w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
+    add(w:limelight_match_ids,
+        matchadd('LimelightDim', '\%<' .. startline .. 'l', 0))
+    if endline > 0
+        add(w:limelight_match_ids,
+            matchadd('LimelightDim', '\%>' .. endline .. 'l', 0))
     endif
-endfu
+enddef
 
-fu s:clear_hl() abort
+def ClearHl() #{{{2
     while exists('w:limelight_match_ids') && !empty(w:limelight_match_ids)
-        sil! call remove(w:limelight_match_ids, -1)->matchdelete()
+        sil! remove(w:limelight_match_ids, -1)->matchdelete()
     endwhile
-endfu
+enddef
 
-fu s:Hex2rgb(str) abort
-    let str = trim(a:str, '#')
-    return [eval('0x' .. str[0 : 1]), eval('0x' .. str[2 : 3]), eval('0x' .. str[4 : 5])]
-endfu
-
-let s:gray_converter = {
-    \ 0: 231,
-    \ 7: 254,
-    \ 15: 256,
-    \ 16: 231,
-    \ 231: 256,
-    \ }
-
-fu s:Gray_contiguous(col) abort
-    let val = get(s:gray_converter, a:col, a:col)
-    if val < 231 || val > 256
-        throw s:Unsupported()
-    endif
-    return val
-endfu
-
-fu s:Gray_ansi(col) abort
-    return a:col == 231 ? 0 : (a:col == 256 ? 231 : a:col)
-endfu
-
-fu s:Coeff(coeff) abort
-    let coeff = a:coeff < 0 ?
-        \ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
+def Coeff(arg_coeff: float): float #{{{2
+    var coeff: float = arg_coeff < 0
+        ?     get(g:, 'limelight_default_coefficient', DEFAULT_COEFF)
+        :     arg_coeff
     if coeff < 0 || coeff > 1
         throw 'Invalid g:limelight_default_coefficient.  Expected: 0.0 ~ 1.0'
     endif
     return coeff
-endfu
+enddef
 
-def s:Dim(coeff: number)
-    var synid = hlID('Normal')->synIDtrans()
-    var fg = synIDattr(synid, 'fg#')
-    var bg = synIDattr(synid, 'bg#')
+def Dim(coeff: float) #{{{2
+    var synid: number = hlID('Normal')->synIDtrans()
+    var fg: string = synIDattr(synid, 'fg#')
+    var bg: string = synIDattr(synid, 'bg#')
 
     var dim: string
     if has('gui_running') || has('termguicolors') && &termguicolors
@@ -114,10 +134,10 @@ def s:Dim(coeff: number)
         elseif empty(fg) || empty(bg)
             throw Unsupported()
         else
-            var _coeff = Coeff(coeff)
-            var fg_rgb = Hex2rgb(fg)
-            var bg_rgb = Hex2rgb(bg)
-            var dim_rgb = [
+            var _coeff: float = Coeff(coeff)
+            var fg_rgb: list<number> = Hex2rgb(fg)
+            var bg_rgb: list<number> = Hex2rgb(bg)
+            var dim_rgb: list<float> = [
                 bg_rgb[0] * _coeff + fg_rgb[0] * (1 - _coeff),
                 bg_rgb[1] * _coeff + fg_rgb[1] * (1 - _coeff),
                 bg_rgb[2] * _coeff + fg_rgb[2] * (1 - _coeff),
@@ -131,10 +151,10 @@ def s:Dim(coeff: number)
         elseif str2nr(fg) <= -1 || str2nr(bg) <= -1
             throw Unsupported()
         else
-            var _coeff = Coeff(coeff)
-            fg = Gray_contiguous(fg)
-            bg = Gray_contiguous(bg)
-            dim = float2nr(str2nr(bg) * _coeff + str2nr(fg) * (1 - _coeff))->Gray_ansi()
+            var _coeff: float = Coeff(coeff)
+            fg = GrayContiguous(fg)
+            bg = GrayContiguous(bg)
+            dim = float2nr(str2nr(bg) * _coeff + str2nr(fg) * (1 - _coeff))->GrayAnsi()
         endif
         if type(dim) == v:t_string
             exe printf('hi LimelightDim ctermfg=%s', dim)
@@ -146,107 +166,110 @@ def s:Dim(coeff: number)
     endif
 enddef
 
-fu s:error(msg) abort
-    echohl ErrorMsg
-    echo a:msg
-    echohl None
-endfu
-
-fu s:parse_coeff(coeff) abort
-    let t = type(a:coeff)
+def ParseCoeff(coeff: any): float #{{{2
+    var t: number = type(coeff)
+    var c: float
     if t == 1
-        if a:coeff =~ '^ *[0-9.]\+ *$'
-            let c = str2float(a:coeff)
+        if coeff =~ '^ *[0-9.]\+ *$'
+            c = str2float(coeff)
         else
-            throw s:invalid_coefficient
+            throw INVALID_COEFFICIENT
         endif
     elseif index([0, 5], t) >= 0
-        let c = t
+        c = t + 0.0
     else
-        throw s:invalid_coefficient
+        throw INVALID_COEFFICIENT
     endif
     return c
-endfu
+enddef
 
-fu s:on(range, ...) abort
-    try
-        let s:limelight_coeff = a:0 > 0 ? s:parse_coeff(a:1) : -1
-        call s:Dim(s:limelight_coeff)
-    catch
-        return s:error(v:exception)
-    endtry
+def On(range: list<number>, coeff: any = '') #{{{2
+    limelight_coeff = coeff != '' ? ParseCoeff(coeff) : -1.0
+    Dim(limelight_coeff)
 
-    let w:limelight_range = a:range
-    if !empty(a:range)
-        call s:clear_hl()
-        call call('s:hl', a:range)
+    w:limelight_range = range
+    if !empty(range)
+        ClearHl()
+        call(Hl, range)
     endif
 
     augroup limelight
-        let was_on = exists('#limelight#CursorMoved')
+        var was_on: bool = exists('#limelight#CursorMoved')
         au!
-        if empty(a:range) || was_on
-            au CursorMoved,CursorMovedI * call s:limelight()
+        if empty(range) || was_on
+            au CursorMoved,CursorMovedI * Limelight()
         endif
         au ColorScheme * try
-            \ |     call s:Dim(s:limelight_coeff)
-            \ | catch
-            \ |     call s:off()
-            \ |     throw v:exception
-            \ | endtry
+            |     Dim(limelight_coeff)
+            | catch
+            |     Off()
+            |     throw v:exception
+            | endtry
     augroup END
 
-    " FIXME: We cannot safely remove this group once Limelight started
+    # FIXME: We cannot safely remove this group once Limelight started
     augroup LimelightCleanup | au!
-        au WinEnter * call s:cleanup()
+        au WinEnter * Cleanup()
     augroup END
 
     if exists('#CursorMoved')
         do <nomodeline> CursorMoved
     endif
-endfu
+enddef
+var limelight_coeff: float
 
-fu s:off() abort
-    call s:clear_hl()
+def Off() #{{{2
+    ClearHl()
     augroup limelight | au!
     augroup END
     augroup! limelight
     unlet! w:limelight_prev w:limelight_match_ids w:limelight_range
-endfu
+enddef
 
-fu s:is_on() abort
-    return exists('#limelight')
-endfu
-
-fu s:cleanup() abort
-    if !s:is_on()
-        call s:clear_hl()
+def Cleanup() #{{{2
+    if !IsOn()
+        ClearHl()
     end
-endfu
+enddef
+#}}}1
+# Utilities {{{1
+def Hex2rgb(arg_str: string): list<number> #{{{2
+    var str: string = trim(arg_str, '#')
+    return [
+        eval('0x' .. str[0 : 1]),
+        eval('0x' .. str[2 : 3]),
+        eval('0x' .. str[4 : 5])
+        ]
+enddef
 
-fu limelight#execute(bang, visual, line1, line2, ...) abort
-    let range = a:visual ? [a:line1, a:line2] : []
-    if a:bang
-        if a:0 > 0 && a:1 =~ '^!' && !s:is_on()
-            if len(a:1) > 1
-                call s:on(range, a:1[1 : -1])
-            else
-                call s:on(range)
-            endif
-        else
-            call s:off()
-        endif
-    elseif a:0 > 0
-        call s:on(range, a:1)
+def IsOn(): bool #{{{2
+    return exists('#limelight')
+enddef
+
+def Unsupported(): string #{{{2
+    var name: string = 'g:limelight_conceal_' .. (has('gui_running') ? 'gui' : 'cterm') .. 'fg'
+
+    if exists(name)
+        return 'Cannot calculate background color.'
     else
-        call s:on(range)
+        return 'Unsupported color scheme. ' .. name .. ' required.'
     endif
-endfu
+enddef
 
-fu limelight#operator(...) abort
-    if !a:0
-        let &opfunc = 'limelight#operator'
-        return 'g@'
+def Empty(line: string): bool #{{{2
+    return line =~ '^\s*$'
+enddef
+
+def GrayContiguous(arg_col: string): string #{{{2
+    var col: number = arg_col->str2nr()
+    var val: number = get(GRAY_CONVERTER, col, col)
+    if val < 231 || val > 256
+        throw Unsupported()
     endif
-    call limelight#execute(0, 1, line("'["), line("']"))
-endfu
+    return val->string()
+enddef
+
+def GrayAnsi(col: number): string #{{{2
+    return (col == 231 ? 0 : (col == 256 ? 231 : col))->string()
+enddef
+
