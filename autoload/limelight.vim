@@ -156,7 +156,7 @@ def Dim(coeff: float) #{{{2
             bg = GrayContiguous(bg)
             dim = float2nr(str2nr(bg) * _coeff + str2nr(fg) * (1 - _coeff))->GrayAnsi()
         endif
-        if type(dim) == v:t_string
+        if typename(dim) == 'string'
             exe printf('hi LimelightDim ctermfg=%s', dim)
         else
             exe printf('hi LimelightDim ctermfg=%d', dim)
