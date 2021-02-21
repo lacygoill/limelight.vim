@@ -142,7 +142,9 @@ def Dim(coeff: float) #{{{2
                 bg_rgb[1] * _coeff + fg_rgb[1] * (1 - _coeff),
                 bg_rgb[2] * _coeff + fg_rgb[2] * (1 - _coeff),
                 ]
-            dim = '#' .. mapnew(dim_rgb, (_, v) => float2nr(v)->printf('%x'))->join('')
+            dim = '#'
+                .. mapnew(dim_rgb, (_, v: float): string => float2nr(v)->printf('%x'))
+                    ->join('')
         endif
         exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
     elseif str2nr(&t_Co) == 256
