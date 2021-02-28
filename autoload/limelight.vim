@@ -122,25 +122,25 @@ def Coeff(arg_coeff: float): float #{{{2
     return coeff
 enddef
 
-def Dim(coeff: float) #{{{2
+def Dim(arg_coeff: float) #{{{2
     var synid: number = hlID('Normal')->synIDtrans()
     var fg: string = synIDattr(synid, 'fg#')
     var bg: string = synIDattr(synid, 'bg#')
 
     var dim: string
     if has('gui_running') || has('termguicolors') && &termguicolors
-        if coeff < 0 && exists('g:limelight_conceal_guifg')
+        if arg_coeff < 0 && exists('g:limelight_conceal_guifg')
             dim = g:limelight_conceal_guifg
         elseif empty(fg) || empty(bg)
             throw Unsupported()
         else
-            var _coeff: float = Coeff(coeff)
+            var coeff: float = Coeff(arg_coeff)
             var fg_rgb: list<number> = Hex2rgb(fg)
             var bg_rgb: list<number> = Hex2rgb(bg)
             var dim_rgb: list<float> = [
-                bg_rgb[0] * _coeff + fg_rgb[0] * (1 - _coeff),
-                bg_rgb[1] * _coeff + fg_rgb[1] * (1 - _coeff),
-                bg_rgb[2] * _coeff + fg_rgb[2] * (1 - _coeff),
+                bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
+                bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
+                bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff),
                 ]
             dim = '#'
                 .. mapnew(dim_rgb, (_, v: float): string => float2nr(v)->printf('%x'))
@@ -148,15 +148,15 @@ def Dim(coeff: float) #{{{2
         endif
         exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
     elseif str2nr(&t_Co) == 256
-        if coeff < 0 && exists('g:limelight_conceal_ctermfg')
+        if arg_coeff < 0 && exists('g:limelight_conceal_ctermfg')
             dim = g:limelight_conceal_ctermfg
         elseif str2nr(fg) <= -1 || str2nr(bg) <= -1
             throw Unsupported()
         else
-            var _coeff: float = Coeff(coeff)
+            var coeff: float = Coeff(arg_coeff)
             fg = GrayContiguous(fg)
             bg = GrayContiguous(bg)
-            dim = float2nr(str2nr(bg) * _coeff + str2nr(fg) * (1 - _coeff))->GrayAnsi()
+            dim = float2nr(str2nr(bg) * coeff + str2nr(fg) * (1 - coeff))->GrayAnsi()
         endif
         if typename(dim) == 'string'
             exe printf('hi LimelightDim ctermfg=%s', dim)
