@@ -26,7 +26,7 @@ def limelight#execute( #{{{2
     var range: list<number> = visual ? [line1, line2] : []
     if bang
         if len(args) > 0 && args[0] =~ '^!' && !IsOn()
-            if len(args[0]) > 1
+            if strlen(args[0]) > 1
                 On(range, args[0][1 : -1])
             else
                 On(range)
