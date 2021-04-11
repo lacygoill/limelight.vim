@@ -13,7 +13,7 @@ const GRAY_CONVERTER: dict<number> = {
     15: 256,
     16: 231,
     231: 256,
-    }
+}
 
 # Interface {{{1
 def limelight#execute( #{{{2
@@ -22,7 +22,7 @@ def limelight#execute( #{{{2
     line1: number,
     line2: number,
     ...args: list<string>
-    )
+)
     var range: list<number> = visual ? [line1, line2] : []
     if bang
         if len(args) > 0 && args[0] =~ '^!' && !IsOn()
@@ -58,7 +58,7 @@ def Getpos(): list<number> #{{{2
         get(g:, 'limelight_paragraph_span', 0)
         -
         (getline('.')->Empty() ? 1 : 0)
-        ])
+    ])
     var pos: list<number> = getcurpos()
     var start: number
     for i in range(0, span)
@@ -141,7 +141,7 @@ def Dim(arg_coeff: float) #{{{2
                 bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
                 bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
                 bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff),
-                ]
+            ]
             dim = '#'
                 .. dim_rgb
                     ->mapnew((_, v: float): string => float2nr(v)->printf('%x'))
@@ -170,16 +170,18 @@ def Dim(arg_coeff: float) #{{{2
 enddef
 
 def ParseCoeff(coeff: any): float #{{{2
-    var t: number = type(coeff)
+    var type: string = typename(coeff)
     var c: float
-    if t == 1
+    if type == 'string'
         if coeff =~ '^ *[0-9.]\+ *$'
             c = str2float(coeff)
         else
             throw INVALID_COEFFICIENT
         endif
-    elseif index([0, 5], t) >= 0
-        c = t + 0.0
+    elseif type == 'number'
+        c = 0.0
+    elseif type == 'float'
+        c = 5.0
     else
         throw INVALID_COEFFICIENT
     endif
@@ -237,12 +239,12 @@ enddef
 #}}}1
 # Utilities {{{1
 def Hex2rgb(arg_str: string): list<number> #{{{2
-    var str: string = trim(arg_str, '#')
+    var str: string = arg_str->trim('#')
     return [
         eval('0x' .. str[0 : 1]),
         eval('0x' .. str[2 : 3]),
         eval('0x' .. str[4 : 5])
-        ]
+    ]
 enddef
 
 def IsOn(): bool #{{{2
