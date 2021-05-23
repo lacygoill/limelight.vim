@@ -98,11 +98,11 @@ enddef
 
 def Hl(startline: number, endline: number) #{{{2
     w:limelight_match_ids = get(w:, 'limelight_match_ids', [])
-    add(w:limelight_match_ids,
-        matchadd('LimelightDim', '\%<' .. startline .. 'l', 0))
+    w:limelight_match_ids
+        ->add(matchadd('LimelightDim', '\%<' .. startline .. 'l', 0))
     if endline > 0
-        add(w:limelight_match_ids,
-            matchadd('LimelightDim', '\%>' .. endline .. 'l', 0))
+        w:limelight_match_ids
+            ->add(matchadd('LimelightDim', '\%>' .. endline .. 'l', 0))
     endif
 enddef
 
