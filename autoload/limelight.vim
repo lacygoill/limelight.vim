@@ -43,7 +43,7 @@ enddef
 
 def limelight#operator(type = ''): string #{{{2
     if type == ''
-        &opfunc = 'limelight#operator'
+        &operatorfunc = 'limelight#operator'
         return 'g@'
     endif
     limelight#execute(false, true, line("'["), line("']"))
