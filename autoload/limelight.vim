@@ -108,7 +108,7 @@ enddef
 
 def ClearHl() #{{{2
     while exists('w:limelight_match_ids') && !empty(w:limelight_match_ids)
-        sil! remove(w:limelight_match_ids, -1)->matchdelete()
+        silent! remove(w:limelight_match_ids, -1)->matchdelete()
     endwhile
 enddef
 
@@ -147,7 +147,7 @@ def Dim(arg_coeff: float) #{{{2
                     ->mapnew((_, v: float): string => float2nr(v)->printf('%x'))
                     ->join('')
         endif
-        exe printf('hi LimelightDim guifg=%s guisp=bg', dim)
+        execute printf('highlight LimelightDim guifg=%s guisp=bg', dim)
     elseif str2nr(&t_Co) == 256
         if arg_coeff < 0 && exists('g:limelight_conceal_ctermfg')
             dim = g:limelight_conceal_ctermfg
@@ -160,9 +160,9 @@ def Dim(arg_coeff: float) #{{{2
             dim = float2nr(str2nr(bg) * coeff + str2nr(fg) * (1 - coeff))->GrayAnsi()
         endif
         if typename(dim) == 'string'
-            exe printf('hi LimelightDim ctermfg=%s', dim)
+            execute printf('highlight LimelightDim ctermfg=%s', dim)
         else
-            exe printf('hi LimelightDim ctermfg=%d', dim)
+            execute printf('highlight LimelightDim ctermfg=%d', dim)
         endif
     else
         throw 'Unsupported terminal.  Sorry.'
@@ -200,11 +200,11 @@ def On(range: list<number>, coeff: any = '') #{{{2
 
     augroup limelight
         var was_on: bool = exists('#limelight#CursorMoved')
-        au!
+        autocmd!
         if empty(range) || was_on
-            au CursorMoved,CursorMovedI * Limelight()
+            autocmd CursorMoved,CursorMovedI * Limelight()
         endif
-        au ColorScheme * try
+        autocmd ColorScheme * try
             |     Dim(limelight_coeff)
             | catch
             |     Off()
@@ -213,19 +213,19 @@ def On(range: list<number>, coeff: any = '') #{{{2
     augroup END
 
     # FIXME: We cannot safely remove this group once Limelight started
-    augroup LimelightCleanup | au!
-        au WinEnter * Cleanup()
+    augroup LimelightCleanup | autocmd!
+        autocmd WinEnter * Cleanup()
     augroup END
 
     if exists('#CursorMoved')
-        do <nomodeline> CursorMoved
+        doautocmd <nomodeline> CursorMoved
     endif
 enddef
 var limelight_coeff: float
 
 def Off() #{{{2
     ClearHl()
-    augroup limelight | au!
+    augroup limelight | autocmd!
     augroup END
     augroup! limelight
     unlet! w:limelight_prev w:limelight_match_ids w:limelight_range

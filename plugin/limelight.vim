@@ -3,11 +3,11 @@ vim9script noclear
 if exists('loaded') | finish | endif
 var loaded = true
 
-com -nargs=? -bar -bang -range Limelight limelight#execute(<bang>0, <count> > 0, <line1>, <line2>, <f-args>)
+command -nargs=? -bar -bang -range Limelight limelight#execute(<bang>0, <count> > 0, <line1>, <line2>, <f-args>)
 
-nno <expr><unique> ++ limelight#operator()
-nno <expr><unique> +++ limelight#operator() .. '_'
-xno <unique> ++ <c-\><c-n><cmd>* Limelight<cr>
+nnoremap <expr><unique> ++ limelight#operator()
+nnoremap <expr><unique> +++ limelight#operator() .. '_'
+xnoremap <unique> ++ <C-\><C-N><Cmd>:* Limelight<CR>
 
 # stop
-nno <unique> +- <cmd>Limelight!<cr>
+nnoremap <unique> +- <Cmd>Limelight!<CR>
