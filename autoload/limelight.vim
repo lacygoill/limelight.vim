@@ -22,8 +22,8 @@ def limelight#execute( #{{{2
 )
     var range: list<number> = visual ? [line1, line2] : []
     if bang
-        if len(args) > 0 && args[0] =~ '^!' && !IsOn()
-            if strlen(args[0]) > 1
+        if args->len() > 0 && args[0] =~ '^!' && !IsOn()
+            if args[0]->strlen() > 1
                 On(range, args[0][1 : -1])
             else
                 On(range)
@@ -51,6 +51,11 @@ enddef
 def Getpos(): list<number> #{{{2
     var bop: string = get(g:, 'limelight_bop', '^\s*$\n\zs')
     var eop: string = get(g:, 'limelight_eop', '^\s*$')
+    if &filetype == 'vim'
+        bop ..= '\|{{' .. '{\d*$'
+        eop ..= '\|{{' .. '{\d*$'
+    endif
+
     var span: number = max([0,
         get(g:, 'limelight_paragraph_span', 0)
         -
