@@ -63,7 +63,7 @@ def Getpos(): list<number> #{{{2
     ])
     var pos: list<number> = getcurpos()
     var start: number
-    for i in range(0, span)
+    for i: number in range(0, span)
         start = searchpos(bop, i == 0 ? 'cbW' : 'bW')[0]
     endfor
     setpos('.', pos)
